@@ -1,23 +1,25 @@
-// src/App.js
-import React from "react";
-import { Routes, Route } from "react-router-dom";
+import logo from './logo.svg';
+import './App.css';
 
-// Your “main” UI:
-import SunflowerStack from "./components/SunflowerStack";
-
-// Detail pages you created:
-import AppDetail      from "./pages/AppDetail";
-import PersonaDetail  from "./pages/PersonaDetail";
-
-export default function App() {
+function App() {
   return (
-    <Routes>
-      {/* “/” now loads your SunflowerStack */}
-      <Route path="/" element={<SunflowerStack />} />
-
-      {/* Detail views */}
-      <Route path="/app/:appId"       element={<AppDetail />} />
-      <Route path="/persona/:personaId" element={<PersonaDetail />} />
-    </Routes>
+    <div className="App">
+      <header className="App-header">
+        <img src={logo} className="App-logo" alt="logo" />
+        <p>
+          Edit <code>src/App.js</code> and save to reload.
+        </p>
+        <a
+          className="App-link"
+          href="https://reactjs.org"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Learn React
+        </a>
+      </header>
+    </div>
   );
 }
+
+export default App;
