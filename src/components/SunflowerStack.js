@@ -1,81 +1,151 @@
-import React, { useState } from 'react';
-import { Search, Filter, Heart, Shield, DollarSign, Zap, Users, Star, ChevronDown, ChevronUp, Grid, List, BookOpen, Briefcase, User } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Filter, Heart, Shield, DollarSign, Zap, Users, Star, ChevronDown, ChevronUp, Grid, List, BookOpen, Briefcase, AlertCircle, Loader } from 'lucide-react';
 
 const SunflowerStack = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState('grid');
   const [selectedPersona, setSelectedPersona] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState({
-    easeOfUse: [1, 5],
-    affordability: [1, 5],
-    privacy: [1, 5],
-    ethics: [1, 5],
-    integration: [1, 5],
-    performance: [1, 5]
+  const [aiTools, setAiTools] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [airtableConfig, setAirtableConfig] = useState({
+    apiKey: '',
+    baseId: '',
+    tableName: 'Apps - Sheet1'
   });
 
   const personas = [
     { id: 'all', name: 'All Tools', icon: Grid, color: 'bg-gray-100 text-gray-700' },
-    { id: 'parent', name: 'Parent', icon: Heart, color: 'bg-pink-100 text-pink-700' },
-    { id: 'entrepreneur', name: 'Soulful Entrepreneur', icon: Briefcase, color: 'bg-purple-100 text-purple-700' },
-    { id: 'manager', name: 'Project Manager', icon: Users, color: 'bg-blue-100 text-blue-700' },
-    { id: 'educator', name: 'Educator', icon: BookOpen, color: 'bg-green-100 text-green-700' }
+    { id: 'parent', name: 'The Parent', icon: Heart, color: 'bg-pink-100 text-pink-700' },
+    { id: 'entrepreneur', name: 'The Soulful Entrepreneur', icon: Briefcase, color: 'bg-purple-100 text-purple-700' },
+    { id: 'technologist', name: 'The Ethical Technologist', icon: Shield, color: 'bg-green-100 text-green-700' },
+    { id: 'hacker', name: 'The Systems Hacker', icon: Zap, color: 'bg-yellow-100 text-yellow-700' },
+    { id: 'wellness', name: 'The Wellness Professional', icon: Heart, color: 'bg-blue-100 text-blue-700' },
+    { id: 'artist', name: 'The Creative Artist', icon: Star, color: 'bg-purple-100 text-purple-700' },
+    { id: 'student', name: 'The Student', icon: BookOpen, color: 'bg-green-100 text-green-700' }
   ];
 
-  const aiTools = [
+  // Sample data (fallback when not connected to Airtable)
+  const sampleTools = [
     {
       id: 1,
-      name: 'EthicalAI Writer',
-      description: 'Privacy-first content creation tool with transparent AI practices',
-      category: 'Content Creation',
+      name: 'ChatGPT',
+      description: 'ChatGPT is an AI chatbot that interacts in natural language and generates human-like responses',
+      category: 'Artificial Intelligence',
+      website: 'https://chatgpt.com/',
+      pricing: 'Free tier available',
       scores: {
         easeOfUse: 4,
         affordability: 4,
-        privacy: 5,
-        ethics: 5,
+        privacy: 3,
+        ethics: 4,
         integration: 3,
         performance: 4
       },
-      pricing: 'Free - $19/mo',
-      tags: ['Open Source', 'Privacy-First', 'Content'],
+      tags: ['Free Tier', 'Proprietary', 'Mobile'],
       featured: true
     },
     {
       id: 2,
-      name: 'Community Analytics Pro',
-      description: 'Ethical data insights for nonprofits and mission-driven organizations',
-      category: 'Analytics',
+      name: 'Claude',
+      description: 'Claude is an advanced AI chatbot offering natural conversations, complex task assistance, and analysis with a focus on ethics and reliability',
+      category: 'Artificial Intelligence',
+      website: 'https://claude.ai/',
+      pricing: 'Free tier available',
       scores: {
-        easeOfUse: 3,
-        affordability: 5,
-        privacy: 4,
-        ethics: 5,
-        integration: 4,
+        easeOfUse: 4,
+        affordability: 4,
+        privacy: 3,
+        ethics: 4,
+        integration: 3,
         performance: 4
       },
-      pricing: 'Free for nonprofits',
-      tags: ['Nonprofit', 'Analytics', 'Community'],
-      featured: false
+      tags: ['Free Tier', 'Proprietary', 'Mobile'],
+      featured: true
     },
     {
       id: 3,
-      name: 'TeachBot Assistant',
-      description: 'Educational AI that respects student privacy and promotes critical thinking',
-      category: 'Education',
+      name: 'Synthesia',
+      description: 'AI platform to turn text into professional, branded videos with avatars—no filming or editing required.',
+      category: 'Video Creation',
+      website: 'https://www.synthesia.io/',
+      pricing: 'Free tier available',
       scores: {
-        easeOfUse: 5,
-        affordability: 4,
-        privacy: 5,
+        easeOfUse: 4,
+        affordability: 3,
+        privacy: 4,
         ethics: 4,
-        integration: 4,
+        integration: 3,
         performance: 4
       },
-      pricing: '$12/mo per teacher',
-      tags: ['Education', 'Privacy', 'K-12'],
-      featured: true
+      tags: ['Free Tier', 'Proprietary'],
+      featured: false
     }
   ];
+
+  const fetchFromAirtable = async () => {
+    if (!airtableConfig.apiKey || !airtableConfig.baseId) {
+      setError('Please provide both API Key and Base ID');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch(`https://api.airtable.com/v0/${airtableConfig.baseId}/${encodeURIComponent(airtableConfig.tableName)}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${airtableConfig.apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Airtable API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      // Transform Airtable records to match our component structure
+      const transformedTools = data.records.map(record => ({
+        id: record.id,
+        name: record.fields['App Name'] || 'Unnamed Tool',
+        description: record.fields.Description || record.fields['Short Description'] || 'No description available',
+        category: record.fields['Primary Category'] || 'Uncategorized',
+        website: record.fields['Website URL'] || '#',
+        pricing: record.fields['Free Tier Available'] ? 'Free tier available' : 'Paid only',
+        scores: {
+          easeOfUse: Math.round((record.fields['Ease of Use'] || 0.5) * 5),
+          affordability: Math.round((record.fields.Affordability || 0.5) * 5),
+          privacy: Math.round((record.fields['Privacy Security'] || 0.5) * 5),
+          ethics: Math.round((record.fields['Ethical Practices'] || 0.5) * 5),
+          integration: Math.round((record.fields['Integration Capabilities'] || 0.5) * 5),
+          performance: Math.round((record.fields['Performance Reliability'] || 0.5) * 5)
+        },
+        tags: [
+          record.fields['Free Tier Available'] ? 'Free Tier' : 'Paid',
+          record.fields['Open Source'] ? 'Open Source' : 'Proprietary',
+          record.fields['GDPR Compliant'] ? 'GDPR' : null,
+          record.fields['Mobile Optimization'] ? 'Mobile' : null
+        ].filter(Boolean),
+        featured: (record.fields['Innovation Factor'] || 0) > 0.8
+      }));
+
+      setAiTools(transformedTools);
+    } catch (err) {
+      setError(`Failed to load from Airtable: ${err.message}`);
+      setAiTools(sampleTools); // Fallback to sample data
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Load sample data by default
+    setAiTools(sampleTools);
+  }, []);
 
   const getOverallScore = (scores) => {
     const values = Object.values(scores);
@@ -96,6 +166,16 @@ const SunflowerStack = () => {
       </div>
     </div>
   );
+
+  // Filter tools based on search and persona
+  const filteredTools = aiTools.filter(tool => {
+    const matchesSearch = tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         tool.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         tool.category.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // For now, show all tools regardless of persona (you can enhance this based on your persona scoring logic)
+    return matchesSearch;
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-orange-50 to-yellow-100">
@@ -183,7 +263,7 @@ const SunflowerStack = () => {
           <div className="lg:w-80">
             <div className="bg-white rounded-xl shadow-sm p-6 sticky top-4">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-gray-900">Filters</h3>
+                <h3 className="text-xl font-bold text-gray-900">Connect to Airtable</h3>
                 <button
                   onClick={() => setShowFilters(!showFilters)}
                   className="lg:hidden flex items-center text-gray-600"
@@ -192,54 +272,79 @@ const SunflowerStack = () => {
                   {showFilters ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </button>
               </div>
-              
-              <div className={`space-y-6 ${showFilters ? 'block' : 'hidden lg:block'}`}>
+                
+              <div className={`space-y-4 mb-6 ${showFilters ? 'block' : 'hidden lg:block'}`}>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">API Key</label>
+                  <input
+                    type="password"
+                    value={airtableConfig.apiKey}
+                    onChange={(e) => setAirtableConfig({...airtableConfig, apiKey: e.target.value})}
+                    placeholder="pat..."
+                    className="w-full p-2 border rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Base ID</label>
+                  <input
+                    type="text"
+                    value={airtableConfig.baseId}
+                    onChange={(e) => setAirtableConfig({...airtableConfig, baseId: e.target.value})}
+                    placeholder="app..."
+                    className="w-full p-2 border rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Table Name</label>
+                  <input
+                    type="text"
+                    value={airtableConfig.tableName}
+                    onChange={(e) => setAirtableConfig({...airtableConfig, tableName: e.target.value})}
+                    placeholder="Apps - Sheet1"
+                    className="w-full p-2 border rounded-lg text-sm"
+                  />
+                </div>
+                <button
+                  onClick={fetchFromAirtable}
+                  disabled={loading}
+                  className="w-full bg-yellow-500 text-white py-2 px-4 rounded-lg hover:bg-yellow-600 disabled:opacity-50 flex items-center justify-center"
+                >
+                  {loading ? (
+                    <>
+                      <Loader className="w-4 h-4 mr-2 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    'Load from Airtable'
+                  )}
+                </button>
+                {error && (
+                  <div className="flex items-center text-red-600 text-sm">
+                    <AlertCircle className="w-4 h-4 mr-2" />
+                    {error}
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t pt-6">
+                <h4 className="font-medium text-gray-900 mb-4">Filter by Values</h4>
                 <div className="space-y-4">
-                  <div className="flex items-center space-x-2 text-yellow-600">
+                  <div className="flex items-center space-x-2 text-green-600">
                     <Zap className="w-5 h-5" />
                     <span className="font-medium">Ease of Use</span>
                   </div>
-                  <ScoreBar score={4} label="" color="bg-green-400" />
-                </div>
-
-                <div className="space-y-4">
                   <div className="flex items-center space-x-2 text-green-600">
                     <DollarSign className="w-5 h-5" />
                     <span className="font-medium">Affordability</span>
                   </div>
-                  <ScoreBar score={4} label="" color="bg-green-400" />
-                </div>
-
-                <div className="space-y-4">
                   <div className="flex items-center space-x-2 text-blue-600">
                     <Shield className="w-5 h-5" />
                     <span className="font-medium">Privacy & Security</span>
                   </div>
-                  <ScoreBar score={5} label="" color="bg-blue-400" />
-                </div>
-
-                <div className="space-y-4">
                   <div className="flex items-center space-x-2 text-purple-600">
                     <Heart className="w-5 h-5" />
                     <span className="font-medium">Ethical Practices</span>
                   </div>
-                  <ScoreBar score={4} label="" color="bg-purple-400" />
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2 text-orange-600">
-                    <Users className="w-5 h-5" />
-                    <span className="font-medium">Integration</span>
-                  </div>
-                  <ScoreBar score={3} label="" color="bg-orange-400" />
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2 text-red-600">
-                    <Star className="w-5 h-5" />
-                    <span className="font-medium">Performance</span>
-                  </div>
-                  <ScoreBar score={4} label="" color="bg-red-400" />
                 </div>
               </div>
             </div>
@@ -249,7 +354,7 @@ const SunflowerStack = () => {
           <div className="flex-1">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-2xl font-bold text-gray-900">
-                {aiTools.length} AI Tools Found
+                {filteredTools.length} AI Tools Found
               </h3>
               <div className="flex items-center space-x-4">
                 <div className="flex bg-gray-100 rounded-lg p-1">
@@ -270,7 +375,7 @@ const SunflowerStack = () => {
             </div>
 
             <div className={`grid gap-6 ${viewMode === 'grid' ? 'md:grid-cols-2' : 'grid-cols-1'}`}>
-              {aiTools.map((tool) => {
+              {filteredTools.map((tool) => {
                 const overallScore = getOverallScore(tool.scores);
                 return (
                   <div key={tool.id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 border border-gray-100 overflow-hidden">
@@ -288,6 +393,16 @@ const SunflowerStack = () => {
                           <div className="flex items-center space-x-4 text-sm text-gray-500">
                             <span className="bg-gray-100 px-3 py-1 rounded-full">{tool.category}</span>
                             <span className="font-medium text-green-600">{tool.pricing}</span>
+                            {tool.website && tool.website !== '#' && (
+                              <a 
+                                href={tool.website} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline"
+                              >
+                                Visit Site
+                              </a>
+                            )}
                           </div>
                         </div>
                         <div className="text-right">
@@ -311,8 +426,11 @@ const SunflowerStack = () => {
                         ))}
                       </div>
 
-                      <button className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-medium py-3 rounded-lg hover:from-yellow-500 hover:to-orange-600 transition-all duration-200">
-                        Learn More
+                      <button 
+                        onClick={() => tool.website && tool.website !== '#' && window.open(tool.website, '_blank')}
+                        className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-medium py-3 rounded-lg hover:from-yellow-500 hover:to-orange-600 transition-all duration-200"
+                      >
+                        {tool.website && tool.website !== '#' ? 'Visit Website' : 'Learn More'}
                       </button>
                     </div>
                   </div>
