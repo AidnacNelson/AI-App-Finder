@@ -1,10 +1,6 @@
 import logo from './logo.svg';
 import './App.css';
 
-useEffect(() => {
-  console.log("🔑 REACT_APP_AIRTABLE_API_KEY →", process.env.REACT_APP_AIRTABLE_API_KEY);
-}, []);
-
 function App() {
   return (
     <div className="App">
