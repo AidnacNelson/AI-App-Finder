@@ -1,3 +1,6 @@
+- export default function App() {
++ export default function HomePage() {
+  
 import SunflowerStack from './components/SunflowerStack';
 import './App.css';
 
