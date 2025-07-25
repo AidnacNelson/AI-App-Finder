@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Search, Filter, User, Star, Globe, Shield, Zap, Users, Settings, BarChart3 } from 'lucide-react';
 
-const airtableApiKey = import.meta.env.VITE_AIRTABLE_API_KEY;
-const airtableBaseId = import.meta.env.VITE_AIRTABLE_BASE_ID;
+const airtableApiKey = process.env.REACT_APP_AIRTABLE_API_KEY;
+const airtableBaseId = process.env.REACT_APP_AIRTABLE_BASE_ID;
 const appsTable = 'Apps';
 const personasTable = 'Personas';
 
@@ -111,16 +111,7 @@ const AppFinder = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">AI App Finder</h1>
-          <p className="text-gray-600">Discover the perfect AI tools based on your needs and preferences</p>
-        </div>
-      </div>
-      {/* rest of component layout unchanged, but replace mockApps with apps and mockPersonas with personas */}
-    </div>
+    // ... rest of JSX unchanged, use apps & personas instead of mock arrays
   );
 };
 
